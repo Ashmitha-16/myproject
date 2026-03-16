@@ -1,0 +1,80 @@
+# ==============================
+# EXP NO: 3
+# Forward Chaining, Backward Chaining, Resolution
+# ==============================
+
+# -------- Knowledge Base --------
+facts = {"A"}
+
+rules = [
+    ({"A"}, "B"),
+    ({"B"}, "C"),
+    ({"C"}, "D")
+]
+
+# -------- Forward Chaining --------
+def forward_chaining(facts, rules):
+    inferred = set()
+    changed = True
+
+    while changed:
+        changed = False
+        for condition, result in rules:
+            if condition.issubset(facts) and result not in facts:
+                facts.add(result)
+                inferred.add(result)
+                changed = True
+
+    return list(inferred)
+
+
+# -------- Backward Chaining --------
+def backward_chaining(goal, facts, rules):
+    if goal in facts:
+        return True
+
+    for condition, result in rules:
+        if result == goal:
+            return all(backward_chaining(subgoal, facts, rules) for subgoal in condition)
+
+    return False
+
+
+# -------- Resolution Strategy --------
+def resolution(clauses):
+    new = set()
+
+    while True:
+        pairs = [(clauses[i], clauses[j])
+                 for i in range(len(clauses))
+                 for j in range(i + 1, len(clauses))]
+
+        for c1, c2 in pairs:
+            for literal in c1:
+                if f"~{literal}" in c2:
+                    resolvent = (c1 | c2) - {literal, f"~{literal}"}
+                    if not resolvent:
+                        return True
+                    new.add(frozenset(resolvent))
+
+        if new.issubset(set(map(frozenset, clauses))):
+            return False
+
+        clauses.extend(list(map(set, new)))
+
+
+# -------- Execution --------
+fc_result = forward_chaining(set(facts), rules)
+bc_result = backward_chaining("D", facts, rules)
+
+clauses = [
+    {"A"},
+    {"~A", "B"},
+    {"~B"}
+]
+res_result = resolution(clauses)
+
+# -------- Output --------
+print("Forward Chaining Result:", fc_result)
+print("Backward Chaining Result:", bc_result)
+print("Resolution Result:", res_result)
